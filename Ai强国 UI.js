@@ -23,12 +23,17 @@ importClass(android.database.sqlite.SQLiteDatabase);
 //双人对战和四人赛（争上游答题） 两项可以提前手动答题，也可执行中辅助点击。
 
 console.setGlobalLogConfig({ "file": "/sdcard/脚本/AiQiangGuo运行日志.txt" });
-var aCount = 12;//文章默认学习篇数
-var vCount = 7;//小视频默认学习个数
+
+//载入配置 From xzy
+var confi = files.read("./config.txt");
+var conf = confi.split(" ");
+
+var aCount = conf[0];//文章默认学习篇数
+var vCount = conf[3];//小视频默认学习个数
 var cCount = 2;//收藏+分享+评论次数
 
-var aTime = 30;//每篇文章学习-30秒 30*12≈360秒=6分钟
-var vTime = 60;//每个小视频学习60秒
+var aTime = conf[1];//每篇文章学习-30秒 30*12≈360秒=6分钟
+var vTime = conf[4];//每个小视频学习60秒
 var rTime = 360;//音视频时长-6分钟
 
 var dyNum = 2;//订阅 2
@@ -37,7 +42,7 @@ var num = random(0, commentText.length - 1) ;//随机数，用于评论内容随
 
 var aCat = ["推荐","要闻","综合"];
 var aCatlog = aCat[num] ;//文章学习类别，随机取"推荐""要闻"、"新思想"
-var aZX = 1;//文章执行1或2脚本
+var aZX = conf[2];//文章执行1或2脚本
 var wDT = 2;//每周专项是否自动执行1是2否
 var date_string = getTodayDateString();//获取当天日期字符串
 var vCat = ["第一频道", "学习视频", "联播频道"];
@@ -50,9 +55,9 @@ if (num == 0){//视频点击关键词，对应上面学习类别
              var s = "中央广播电视总台";
              }
  
-var lCount = 1;//挑战答题轮数
+var lCount = conf[5];//挑战答题轮数
 var qCount = random(5, 7);//挑战答题每轮答题数(5~7随机)
-var zCount = 2;//四人赛（争上游答题）轮数
+var zCount = conf[6];//四人赛（争上游答题）轮数
 var zsyzd =1;//四人赛（争上游）和双人对战是否自动做，1，2 默认自动1
 var oldaquestion;//四人赛（争上游）和对战答题循环，定义旧题目对比新题目用20201022
 var zxzd =1;//每周和专项是否自动做，1，2 默认自动1
@@ -180,6 +185,20 @@ ui.zCount.setText(zCount.toString());
 ui.zxzd.setText(zxzd.toString());
 
 var thread = null;
+
+ui.save.click(function () {
+    aCount = parseInt(ui.aCount.getText());
+    aTime = parseInt(ui.aTime.getText());
+    aZX = parseInt(ui.aZX.getText());
+    vCount = parseInt(ui.vCount.getText());
+    vTime = parseInt(ui.vTime.getText());
+    lCount = parseInt(ui.lCount.getText());
+    zCount = parseInt(ui.zCount.getText());
+    
+    var config = aCount+" "+aTime+" "+aZX+" "+vCount+" "+vTime+" "+lCount+" "+zCount;
+    files.write("./config.txt", config);
+    toast("保存成功");
+});
 
 ui.all.click(function () {
     if (thread != null && thread.isAlive()) {
