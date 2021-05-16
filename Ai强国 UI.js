@@ -165,7 +165,7 @@ ui.emitter.on("options_item_selected", (e, item)=>{
             alert("协议", "免责声明：本程序只供个人学习Auto.js使用，不得盈利传播，不得用于违法用途，否则造成的一切后果自负！\n如果继续使用此应用即代表您同意此协议");
             break;
         case "关于":
-            alert("关于", "Ai强国 M-2021.05.16 \n Geno Modified \n 由格诺修改版本");
+            alert("关于", "Ai强国 M-21.05.16 \n Geno Modified \n 由格诺修改版本");
             break;
         case "说明":
             alert("使用说明",
