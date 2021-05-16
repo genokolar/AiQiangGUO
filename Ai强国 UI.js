@@ -22,7 +22,7 @@ importClass(android.database.sqlite.SQLiteDatabase);
 //执行逻辑为：检查积分，本地频道，四人赛（争上游答题）2轮，双人对战1轮，挑战答题 1轮*5题，每日答题（至领取奖励已达今日上限），文章 12篇30秒（含前2篇文章分享点赞评论），视频 6个60秒，之后循环检查 文章个数时长积分、视频个数积分，本地，挑战，每日答题 积分，不足则循环执行。以上足够之后，检查分享评论积分，不足则学习2篇文章执行分享点赞评论；检查视频时长，不足则收听广播补时长（注意广播不会自动退出，但不影响接下来执行）；检查双人对战积分，<1执行一次双人对战；检查争上游答题积分，<2执行两次争上游答题。
 //双人对战和四人赛（争上游答题） 两项可以提前手动答题，也可执行中辅助点击。
 
-console.setGlobalLogConfig({ "file": "/sdcard/脚本/AiQiangGuo运行日志.txt" });
+console.setGlobalLogConfig({ "file": "/sdcard/脚本/Ai强国运行日志.txt" });
 
 //载入配置 From xzy
 var confi = files.read("./config.txt");
@@ -84,9 +84,9 @@ ui.layout(
                     <ScrollView>
                         <vertical>
                             <button text="先点我开启无障碍和悬浮窗,如果没有反应，说明已经开启" style="Widget.AppCompat.Button.Colored" id="click_me" w="*" />
-                            <button id="stop" w="*" text="停止任务" style="Widget.AppCompat.Button.Colored" />
                             <button style="Widget.AppCompat.Button.Colored" id="all" h="50" text="默认执行" />
                             <button id="customize" w="*" text="自定义执行" style="Widget.AppCompat.Button.Colored" />
+                            <button id="stop" w="*" text="停止任务" style="Widget.AppCompat.Button.Colored" />
                             <button text="-------以下为单个任务执行-------" style="Widget.AppCompat.Button.Borderless.Colored" w="*" />
                             <button id="dq" w="*" text="每日答题" style="Widget.AppCompat.Button.Colored" />
                             <button id="wq" w="*" text="每周答题" style="Widget.AppCompat.Button.Colored" />
@@ -101,7 +101,6 @@ ui.layout(
                 <frame>
                     <ScrollView>
                         <vertical>
-                            <button style="Widget.AppCompat.Button.Colored" id="save" h="50" text="保存当前配置" />
                             <button text="-------自定义读文章的配置-------" style="Widget.AppCompat.Button.Borderless.Colored" w="*" />
                             <horizontal>
                                 <text textSize="15sp" marginLeft="15" textColor="black" text="文章数量:" />
@@ -136,10 +135,20 @@ ui.layout(
                                 <text textSize="15sp" marginLeft="15" textColor="black" text="每周挑战下拉次数:" />
                                 <input id="wqslipCount" w="30" text="" />
                             </horizontal>
+                            <button style="Widget.AppCompat.Button.Colored" id="save" h="50" text="保存当前配置" />
                         </vertical>
                     </ScrollView>
                 </frame>
             </viewpager>
+        </vertical>
+        <vertical layout_gravity="left" bg="#ffffff" w="280">
+            <img w="280" h="200" scaleType="fitXY" src="http://images.shejidaren.com/wp-content/uploads/2014/10/023746fki.jpg"/>
+            <list id="menu">
+                <horizontal bg="?selectableItemBackground" w="*">
+                    <img w="50" h="50" padding="16" src="{{this.icon}}" tint="{{color}}"/>
+                    <text textColor="black" textSize="15sp" text="{{this.title}}" layout_gravity="center"/>
+                </horizontal>
+            </list>
         </vertical>
     </drawer>
 );
@@ -156,7 +165,7 @@ ui.emitter.on("options_item_selected", (e, item)=>{
             alert("协议", "免责声明：本程序只供个人学习Auto.js使用，不得盈利传播，不得用于违法用途，否则造成的一切后果自负！\n如果继续使用此应用即代表您同意此协议");
             break;
         case "关于":
-            alert("关于", "Ai强国 ，Geno Modified");
+            alert("关于", "Ai强国 M-2021.05.16 \n Geno Modified \n 由格诺修改版本");
             break;
         case "说明":
             alert("使用说明",
@@ -176,9 +185,28 @@ ui.tabs.setupWithViewPager(ui.viewpager);
 //让工具栏左上角可以打开侧拉菜单
 ui.toolbar.setupWithDrawer(ui.drawer);
 
+ui.menu.setDataSource([
+  {
+      title: "作者官网： \n https://notes.glab.online/",
+      icon: "@drawable/ic_android_black_48dp"
+  },
+  {
+      title: "退出",
+      icon: "@drawable/ic_exit_to_app_black_48dp"
+  }
+]);
+
+ui.menu.on("item_click", item => {
+    switch(item.title){
+        case "退出":
+            ui.finish();
+            break;
+    }
+});
+
 ui.click_me.on("click", ()=>{
     toast("选择'Ai强国'开启无障碍");
-    engines.execScript("选择'自动学习强国'开启无障碍","auto.waitFor();console.show();console.hide();");
+    engines.execScript("选择'Ai强国'开启无障碍","auto.waitFor();console.show();console.hide();");
 });
 ui.aCount.setText(aCount.toString());
 ui.aTime.setText(aTime.toString());
@@ -499,7 +527,7 @@ function main() {
   }
     var end = new Date().getTime();
     console.log("运行结束,共耗时" + (parseInt(end - start)) / 1000 + "秒");
-    console.log("AiQiangGuo小助手执行完毕，请检查积分。");
+    console.log("Ai强国小助手执行完毕，请检查积分。");
     threads.shutDownAll();
     console.hide();
     engines.stopAll();
@@ -519,7 +547,8 @@ function main() {
 function start_app() {
     console.setPosition(0, device.height / 1.5);//部分华为手机console有bug请注释本行
     console.show();//部分华为手机console有bug请注释本行
-    console.log("欢迎使用AiQiangGuo小助手");
+    console.log("欢迎使用Ai强国小助手");
+    console.log("--Geno modified");
     console.log("启动学习强国");
     if (!launchApp("学习强国")){//启动学习强国app
      console.error("找不到学习强国App!");
