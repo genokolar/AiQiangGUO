@@ -58,6 +58,7 @@ if (num == 0){//视频点击关键词，对应上面学习类别
 var lCount = conf[5];//挑战答题轮数
 var qCount = random(5, 7);//挑战答题每轮答题数(5~7随机)
 var zCount = conf[6];//四人赛（争上游答题）轮数
+var wqslipCount = conf[7];//每周答题下滑次数
 var zsyzd =1;//四人赛（争上游）和双人对战是否自动做，1，2 默认自动1
 var oldaquestion;//四人赛（争上游）和对战答题循环，定义旧题目对比新题目用20201022
 var zxzd =1;//每周和专项是否自动做，1，2 默认自动1
@@ -130,6 +131,11 @@ ui.layout(
                                 <text textSize="15sp" marginLeft="15" textColor="black" text="每周专项:" />
                                 <input id="zxzd" w="30" text="" />
                             </horizontal>
+                            <button text="-------其他配置-------" style="Widget.AppCompat.Button.Borderless.Colored" w="*" />
+                            <horizontal>
+                                <text textSize="15sp" marginLeft="15" textColor="black" text="每周挑战下拉次数:" />
+                                <input id="wqslipCount" w="30" text="" />
+                            </horizontal>
                         </vertical>
                     </ScrollView>
                 </frame>
@@ -183,6 +189,7 @@ ui.lCount.setText(lCount.toString());
 ui.qCount.setText(qCount.toString());
 ui.zCount.setText(zCount.toString());
 ui.zxzd.setText(zxzd.toString());
+ui.wqslipCount.setText(wqslipCount.toString());
 
 var thread = null;
 
@@ -194,8 +201,9 @@ ui.save.click(function () {
     vTime = parseInt(ui.vTime.getText());
     lCount = parseInt(ui.lCount.getText());
     zCount = parseInt(ui.zCount.getText());
+    wqslipCount = parseInt(ui.wqslipCount.getText());
     
-    var config = aCount+" "+aTime+" "+aZX+" "+vCount+" "+vTime+" "+lCount+" "+zCount;
+    var config = aCount+" "+aTime+" "+aZX+" "+vCount+" "+vTime+" "+lCount+" "+zCount+" "+wqslipCount;
     files.write("./config.txt", config);
     toast("保存成功");
 });
@@ -232,6 +240,7 @@ ui.customize.click(function () {
         qCount = parseInt(ui.qCount.getText());
         zCount = parseInt(ui.zCount.getText());
         zxzd = parseInt(ui.zxzd.getText());
+        wqslipCount = parseInt(ui.wqslipCount.getText());
         customize_flag = true;
         console.log('文章频道：' + aCatlog.toString() + '日期：' + date_string)
         console.log('文章数量：' + aCount.toString() + '篇')
@@ -284,6 +293,7 @@ ui.wq.click(function () {//每周答题
     }
     thread = threads.start(function () {
          start_app();
+         wqslipCount = parseInt(ui.wqslipCount.getText());
          weeklyQuestion();
          threads.shutDownAll();
          console.hide();
@@ -2413,10 +2423,10 @@ function weeklyQuestion() {
         } else {
             delay(1);
             swipe(x, h1, x, h2, 500);//往下翻（纵坐标从5/6处滑到1/6处）
-            console.log("滑动查找未作答的每周答题")
+            console.log("滑动第" + n.toString() + "次查找未作答的每周答题")
             n++;
-            if (n >9){
-            console.log("下滑十次没有可作答每周答题,退出!!!")   
+            if (n >= wqslipCount ){
+            console.log("下滑" + wqslipCount.toString() + "次没有可作答每周答题,退出!!!")   
             back(); delay(1);
             back(); delay(1);
             back(); delay(1);
