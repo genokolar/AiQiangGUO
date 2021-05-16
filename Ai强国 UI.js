@@ -1,11 +1,7 @@
 "ui";
-/*
-runtime.loadJar('./jsoup-1.12.1.jar');
-importClass(org.jsoup.Jsoup);
-importClass(org.jsoup.nodes.Document);
-importClass(org.jsoup.select.Elements);
-*/
 
+importClass(android.view.View);
+//db操作
 importClass(android.database.sqlite.SQLiteDatabase);
 
 /**代码原作者
@@ -69,47 +65,110 @@ var ErShiSiShi ="下列不属于二十四史的是。";//二十四史
 var customize_flag = false;//自定义运行标志
 
 /********************************************UI部分***********************************************/
+var color = "#009688";
 ui.layout(
-    <vertical>
-        <text textSize="18sp" textColor="red" text="AiQiangGuo Ver2.22.0-2021.03.06" />
-        <button id="all" h="50" text="积分执行" />
-        <button id="customize" h="50" text="顺序执行" />
-        <button id="cq" h="50" text="挑战答题" />
-        <button id="wq" h="50" text="每周答题" />
-        <button id="sr" h="50" text="双人对战" />
-       <button id="zsy" h="50" text="四人对战" />
-        <button id="stop" h="50" text="停止运行" />
-       
-        <horizontal>
-            <text textSize="15sp" marginLeft="15" textColor="black" text="文章数量:" />
-            <input id="aCount" w="30" text="" />
-            <text textSize="15sp" marginLeft="15" textColor="black" text="时长:" />
-            <input id="aTime" w="30" text="" />
-             <text textSize="15sp" marginLeft="15" textColor="black" text="执行:" />
-            <input id="aZX" w="30" text="" />
-        </horizontal>
-        <horizontal>
-            <text textSize="15sp" marginLeft="15" textColor="black" text="视频数量:" />
-            <input id="vCount" w="30" text="" />
-            <text textSize="15sp" marginLeft="15" textColor="black" text="时长:" />
-            <input id="vTime" w="30" text="" />
-        </horizontal>
-        <horizontal>
-            <text textSize="15sp" marginLeft="15" textColor="black" text="挑战次数:" />
-            <input id="lCount" w="30" text="" />
-            <text textSize="15sp" marginLeft="15" textColor="black" text="答题:" />
-            <input id="qCount" w="30" text="" />
-        </horizontal>
-        <horizontal>
-            <text textSize="15sp" marginLeft="15" textColor="black" text="对战次数:" />
-            <input id="zCount" w="30" text="" />
-            <text textSize="15sp" marginLeft="15" textColor="black" text="每周专项:" />
-            <input id="zxzd" w="30" text="" />
-        </horizontal>
-        <button w="250" layout_gravity="center" id="about" text="使用说明" />
-    </vertical>
+    <drawer id="drawer">
+        <vertical>
+            <appbar>
+                <toolbar id="toolbar" title="Ai强国" />
+                <tabs id="tabs" />
+            </appbar>
+            <viewpager id="viewpager">
+                <frame>
+                    <ScrollView>
+                        <vertical>
+                            <button text="先点我开启无障碍和悬浮窗,如果没有反应，说明已经开启" style="Widget.AppCompat.Button.Colored" id="click_me" w="*" />
+                            <button id="stop" w="*" text="停止任务" style="Widget.AppCompat.Button.Colored" />
+                            <button style="Widget.AppCompat.Button.Colored" id="all" h="50" text="默认执行" />
+                            <button id="customize" w="*" text="自定义执行" style="Widget.AppCompat.Button.Colored" />
+                            <button text="-------以下为单个任务执行-------" style="Widget.AppCompat.Button.Borderless.Colored" w="*" />
+                            <button id="dq" w="*" text="每日答题" style="Widget.AppCompat.Button.Colored" />
+                            <button id="wq" w="*" text="每周答题" style="Widget.AppCompat.Button.Colored" />
+                            <button id="sq" w="*" text="专项答题" style="Widget.AppCompat.Button.Colored" />
+                            <button id="cq" w="*" text="挑战答题" style="Widget.AppCompat.Button.Colored" />
+                            <button id="sr" w="*" text="双人对战" style="Widget.AppCompat.Button.Colored" />
+                            <button id="zsy" w="*" text="四人赛" style="Widget.AppCompat.Button.Colored" />
+                            <button id="wzsp" w="*" text="文章视频" style="Widget.AppCompat.Button.Colored" />
+                        </vertical>
+                    </ScrollView>
+                </frame>
+                <frame>
+                    <ScrollView>
+                        <vertical>
+                            <button style="Widget.AppCompat.Button.Colored" id="save" h="50" text="保存当前配置" />
+                            <button text="-------自定义读文章的配置-------" style="Widget.AppCompat.Button.Borderless.Colored" w="*" />
+                            <horizontal>
+                                <text textSize="15sp" marginLeft="15" textColor="black" text="文章数量:" />
+                                <input id="aCount" w="30" text="" />
+                                <text textSize="15sp" marginLeft="15" textColor="black" text="时长:" />
+                                <input id="aTime" w="30" text="" />
+                                <text textSize="15sp" marginLeft="15" textColor="black" text="执行:" />
+                                <input id="aZX" w="30" text="" />
+                            </horizontal>
+                            <button text="-------自定义看视频的配置-------" style="Widget.AppCompat.Button.Borderless.Colored" w="*" />
+                            <horizontal>
+                                <text textSize="15sp" marginLeft="15" textColor="black" text="视频数量:" />
+                                <input id="vCount" w="30" text="" />
+                                <text textSize="15sp" marginLeft="15" textColor="black" text="时长:" />
+                                <input id="vTime" w="30" text="" />
+                            </horizontal>
+                            <button text="-------自定义答题挑战的配置-------" style="Widget.AppCompat.Button.Borderless.Colored" w="*" />
+                            <horizontal>
+                                <text textSize="15sp" marginLeft="15" textColor="black" text="挑战次数:" />
+                                <input id="lCount" w="30" text="" />
+                                <text textSize="15sp" marginLeft="15" textColor="black" text="答题数:" />
+                                <input id="qCount" w="30" text="" />
+                            </horizontal>
+                            <horizontal>
+                                <text textSize="15sp" marginLeft="15" textColor="black" text="四人赛次数:" />
+                                <input id="zCount" w="30" text="" />
+                                <text textSize="15sp" marginLeft="15" textColor="black" text="每周专项:" />
+                                <input id="zxzd" w="30" text="" />
+                            </horizontal>
+                        </vertical>
+                    </ScrollView>
+                </frame>
+            </viewpager>
+        </vertical>
+    </drawer>
 );
+//创建选项菜单(右上角)
+ui.emitter.on("create_options_menu", menu=>{
+    menu.add("协议");
+    menu.add("关于");
+    menu.add("说明");
+});
+//监听选项菜单点击
+ui.emitter.on("options_item_selected", (e, item)=>{
+    switch(item.getTitle()){
+        case "协议":
+            alert("协议", "免责声明：本程序只供个人学习Auto.js使用，不得盈利传播，不得用于违法用途，否则造成的一切后果自负！\n如果继续使用此应用即代表您同意此协议");
+            break;
+        case "关于":
+            alert("关于", "Ai强国 ，Geno Modified");
+            break;
+        case "说明":
+            alert("使用说明",
+                "〇程序需要 悬浮窗 和 无障碍权限（设置→辅助功能→无障碍→本 APP）\n 〇程序工作原理为模拟点击，基于Auto.js框架+JavaScript脚本执行 \n 〇程序不支持订阅。正常执行完毕50+分（可执行前手动答题，答题完毕学习强国请返回主界面; 也可执行中手动辅助答题，以手动点击为准） \n 〇积分判断执行：读取今日积分确定需执行任务，任务精准，但部分手机可能不支持(积分获取正常推荐使用) \n 〇循序依次执行：预置每日积分所需执行任务数，不判断积分，依次执行所有任务(积分获取返回null或报错使用) \n ◎请确保进入学习强国时位于 主界面，模拟点击从主界面开始 \n ◎因存在文章误点击视频，多次重复点击同一文章视频问题，有概率造成循环执行，请手动补学 \n ◎安卓版本低于安卓7，无法执行收藏评论转发，文章界面模拟滑动 \n ★代码基于以下项目实现（UI及其它有所更改）：Auto.js https://github.com/hyb1996/Auto.js \n LazyStudy https://github.com/lolisaikou/LazyStudy  \n AutoLearnChina https://github.com/gzhjic/LearnChinaHelper \n XXQG-Helper https://github.com/ivanwhaf/xxqg-helper \n ●免责声明：本程序只供个人学习Auto.js使用，不得盈利传播，不得用于违法用途，否则造成的一切后果自负！"
+            );
+            break;
+    }
+    e.consumed = true;
+});
+activity.setSupportActionBar(ui.toolbar);
 
+//设置滑动页面的标题
+ui.viewpager.setTitles(["自动执行", "数据配置"]);
+//让滑动页面和标签栏联动
+ui.tabs.setupWithViewPager(ui.viewpager);
+
+//让工具栏左上角可以打开侧拉菜单
+ui.toolbar.setupWithDrawer(ui.drawer);
+
+ui.click_me.on("click", ()=>{
+    toast("选择'Ai强国'开启无障碍");
+    engines.execScript("选择'自动学习强国'开启无障碍","auto.waitFor();console.show();console.hide();");
+});
 ui.aCount.setText(aCount.toString());
 ui.aTime.setText(aTime.toString());
 ui.aZX.setText(aZX.toString());
@@ -182,7 +241,23 @@ ui.cq.click(function () {//挑战答题
     });
 });
 
-ui.wq.click(function () {//每周答题 专项答题
+ui.dq.click(function () {//每日答题
+    auto.waitFor();//等待获取无障碍辅助权限
+   if (thread != null && thread.isAlive()) {
+       alert("注意", "脚本正在运行，请结束之前进程");
+       return;
+   }
+   thread = threads.start(function () {
+        start_app();
+        dailyQuestion();
+        threads.shutDownAll();
+        console.hide();
+        engines.stopAll();
+        exit();
+   });
+});
+
+ui.wq.click(function () {//每周答题
      auto.waitFor();//等待获取无障碍辅助权限
     if (thread != null && thread.isAlive()) {
         alert("注意", "脚本正在运行，请结束之前进程");
@@ -191,12 +266,27 @@ ui.wq.click(function () {//每周答题 专项答题
     thread = threads.start(function () {
          start_app();
          weeklyQuestion();
-         specialQuestion();
          threads.shutDownAll();
          console.hide();
          engines.stopAll();
          exit();
     });
+});
+
+ui.sq.click(function () {// 专项答题
+    auto.waitFor();//等待获取无障碍辅助权限
+   if (thread != null && thread.isAlive()) {
+       alert("注意", "脚本正在运行，请结束之前进程");
+       return;
+   }
+   thread = threads.start(function () {
+        start_app();
+        specialQuestion();
+        threads.shutDownAll();
+        console.hide();
+        engines.stopAll();
+        exit();
+   });
 });
 
 ui.sr.click(function () {//双人对战
@@ -230,6 +320,28 @@ ui.zsy.click(function () {//四人赛（争上游答题）
          console.hide();
          engines.stopAll();
          exit();
+    });
+});
+
+ui.wzsp.click(function () {//读文章看视频
+    auto.waitFor();//等待获取无障碍辅助权限
+    if (thread != null && thread.isAlive()) {
+        alert("注意", "脚本正在运行，请结束之前进程");
+        return;
+    }
+    thread = threads.start(function () {
+        start_app();
+        aZX = parseInt(ui.aZX.getText());
+        if (aZX == 1) {
+            articleStudy1();//学习文章脚本1，包含点赞、分享和评论 
+        } else {
+            articleStudy2();//学习文章脚本2，包含点赞、分享和评论 
+        }
+        videoStudy_news();//看视频              
+        threads.shutDownAll();
+        console.hide();
+        engines.stopAll();
+        exit();
     });
 });
 
@@ -268,11 +380,6 @@ ui.stop.click(function () {
     });
 });*/
 
-ui.about.click(function () {
- alert("使用说明",
-        "AiQiangGuo Ver 2.22.0-2021.03.06 \n 〇程序需要 悬浮窗 和 无障碍权限（设置→辅助功能→无障碍→auto.js）\n 〇程序工作原理为模拟点击，基于Auto.js框架+JavaScript脚本执行 \n 〇程序不支持订阅。正常执行完毕50+分（每周 专项因部分题提示与题干不一致，不保证答题正确; 争上游 对战存在部分特殊题提取不到题干不能点击。可执行前手动答题，答题完毕学习强国请返回主界面; 也可执行中手动辅助答题，以手动点击为准） \n 〇积分判断执行：读取今日积分确定需执行任务，任务精准，但部分手机可能不支持(积分获取正常推荐使用) \n 〇循序依次执行：预置每日积分所需执行任务数，不判断积分，依次执行所有任务(积分获取返回null或报错使用) \n ◎请确保进入学习强国时位于 主界面，模拟点击从主界面开始 \n ◎因存在文章误点击视频，多次重复点击同一文章视频问题，有概率造成循环执行，请手动补学 \n ◎安卓版本低于安卓7，无法执行收藏评论转发，文章界面模拟滑动 \n ◎测试机型：Redmi 6，Android 9，MiUI 11开发版 \n ★代码基于以下项目实现：Auto.js https://github.com/hyb1996/Auto.js \n LazyStudy https://github.com/lolisaikou/LazyStudy  \n AutoLearnChina https://github.com/gzhjic/LearnChinaHelper \n XXQG-Helper https://github.com/ivanwhaf/xxqg-helper \n ●免责声明：本程序只供个人学习Auto.js使用，不得盈利传播，不得用于违法用途，否则造成的一切后果自负！"
-         )
-         });
          
 /**
  * @description: 定义延时函数
@@ -2289,8 +2396,8 @@ function weeklyQuestion() {
             swipe(x, h1, x, h2, 500);//往下翻（纵坐标从5/6处滑到1/6处）
             console.log("滑动查找未作答的每周答题")
             n++;
-            if (n >3){
-            console.log("下滑四次没有可作答每周答题,退出!!!")   
+            if (n >9){
+            console.log("下滑十次没有可作答每周答题,退出!!!")   
             back(); delay(1);
             back(); delay(1);
             back(); delay(1);
