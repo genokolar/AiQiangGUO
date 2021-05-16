@@ -17,14 +17,15 @@ importClass(android.database.sqlite.SQLiteDatabase);
 
 /**修改版
  * @Description: Auto.js AiQiangGuo 1+(12)+(6+6)+5+6+2+1+(1+1)+1=42分
- * @version: 2.19-2020.12
+ * @version: 2.22.0-2021.03
  * @Author: fengwuying
- * @Date: 2020-12
+ * @Date: 2021-03
  */
  //原始代码来自ivanwhaf 基于播报按钮进行判断点击来自chongyadong 基于题目对比答题来自Ivan-cn。另有部分代码移植自lolisaikou
 //版本号命名规则：学习强国版本号-年月，如遇本月有重大升级，增加日期。小版本迭代不变，
-//执行逻辑为：文章 12篇30秒（含前2篇文章分享点赞评论），视频 6个60秒，本地频道，挑战答题 1轮*5题，每日答题（至领取奖励已达今日上限），之后循环检查 文章个数时长积分、视频个数积分，本地，挑战，每日答题 积分，不足则循环执行。以上足够之后，检查分享评论积分，不足则学习2篇文章执行分享点赞评论；检查视频时长，不足则收听广播补时长（注意广播不会自动退出，但不影响接下来执行）；检查双人对战积分，<1执行一次双人对战；检查争上游答题积分，<2执行两次争上游答题。
-//双人对战和争上游答题为基于延时执行，不算很准确，重在参与（参与分1+2）。提取的题目（已去除题目号1. 2.）在题库中搜索不到答案。争上游两轮结束判断偶尔出错导致执行报错，故放在最后执行。这两项可以提前手动答题，均为单选题也可执行中辅助点击。
+//执行逻辑为：检查积分，本地频道，四人赛（争上游答题）2轮，双人对战1轮，挑战答题 1轮*5题，每日答题（至领取奖励已达今日上限），文章 12篇30秒（含前2篇文章分享点赞评论），视频 6个60秒，之后循环检查 文章个数时长积分、视频个数积分，本地，挑战，每日答题 积分，不足则循环执行。以上足够之后，检查分享评论积分，不足则学习2篇文章执行分享点赞评论；检查视频时长，不足则收听广播补时长（注意广播不会自动退出，但不影响接下来执行）；检查双人对战积分，<1执行一次双人对战；检查争上游答题积分，<2执行两次争上游答题。
+//双人对战和四人赛（争上游答题） 两项可以提前手动答题，也可执行中辅助点击。
+
 console.setGlobalLogConfig({ "file": "/sdcard/脚本/AiQiangGuo运行日志.txt" });
 var aCount = 12;//文章默认学习篇数
 var vCount = 7;//小视频默认学习个数
@@ -35,16 +36,17 @@ var vTime = 60;//每个小视频学习60秒
 var rTime = 360;//音视频时长-6分钟
 
 var dyNum = 2;//订阅 2
-var commentText = ["支持党，支持国家！", "为实现中华民族伟大复兴而不懈奋斗！", "不忘初心，牢记使命"];//评论内容，可自行修改，大于5个字便计分
-var num = random(0, commentText.length - 1) ;//随机数    
+var commentText = ["支持党，支持国家！", "为实现中华民族伟大复兴而不懈奋斗！", "不忘初心，牢记使命"];//评论内容，三组随机发送，可自行修改，大于5个字便计分
+var num = random(0, commentText.length - 1) ;//随机数，用于评论内容随机发送其一，文章视频学习类别，视频点击关键词  
 
 var aCat = ["推荐","要闻","综合"];
 var aCatlog = aCat[num] ;//文章学习类别，随机取"推荐""要闻"、"新思想"
 var aZX = 1;//文章执行1或2脚本
+var wDT = 2;//每周专项是否自动执行1是2否
 var date_string = getTodayDateString();//获取当天日期字符串
 var vCat = ["第一频道", "学习视频", "联播频道"];
 var vCatlog = vCat[num] ; //视频学习类别，随机取 "第一频道"、"学习视频"、"联播频道"
-if (num == 0){
+if (num == 0){//视频点击关键词，对应上面学习类别
              var s = "央视网";
              }else if (num == 1){
              var s = "央视新闻";
@@ -54,11 +56,12 @@ if (num == 0){
  
 var lCount = 1;//挑战答题轮数
 var qCount = random(5, 7);//挑战答题每轮答题数(5~7随机)
-var zCount = 2;//争上游答题轮数
-var zsyzd =1;//争上游和双人对战是否自动做，1，2 默认自动1
-var oldaquestion;//争上游和对战答题循环，定义旧题目对比新题目用20201022
+var zCount = 2;//四人赛（争上游答题）轮数
+var zsyzd =1;//四人赛（争上游）和双人对战是否自动做，1，2 默认自动1
+var oldaquestion;//四人赛（争上游）和对战答题循环，定义旧题目对比新题目用20201022
+var zxzd =1;//每周和专项是否自动做，1，2 默认自动1
 var myScores = {};//分数
-//特殊题，特点：题目一样，答案不同
+//特殊题，特点：题目一样，答案不同 >>>欢迎反馈其他特殊题<<<
 var ZiXingTi = "选择词语的正确词形。"; //字形题
 var DuYinTi = "选择正确的读音。";//读音题 20201211
 var ErShiSiShi ="下列不属于二十四史的是。";//二十四史
@@ -68,21 +71,15 @@ var customize_flag = false;//自定义运行标志
 /********************************************UI部分***********************************************/
 ui.layout(
     <vertical>
-        <text textSize="18sp" textColor="red" text="AiQiangGuo Ver2.19-2020.12.12" />
+        <text textSize="18sp" textColor="red" text="AiQiangGuo Ver2.22.0-2021.03.06" />
         <button id="all" h="50" text="积分执行" />
         <button id="customize" h="50" text="顺序执行" />
         <button id="cq" h="50" text="挑战答题" />
-        <button id="dq" h="50" text="每日答题" />
+        <button id="wq" h="50" text="每周答题" />
         <button id="sr" h="50" text="双人对战" />
-       <button id="zsy" h="50" text="争上游答题" />
+       <button id="zsy" h="50" text="四人对战" />
         <button id="stop" h="50" text="停止运行" />
        
-       <horizontal>
-            <text textSize="15sp" marginLeft="15" textColor="black" text="文章频道:" />
-            <input id="aCatlog" w="55" text="" />
-            <text textSize="15sp" marginLeft="15" textColor="black" text="日期:" />
-            <input id="date_string" w="110" text="" />
-        </horizontal>
         <horizontal>
             <text textSize="15sp" marginLeft="15" textColor="black" text="文章数量:" />
             <input id="aCount" w="30" text="" />
@@ -90,12 +87,6 @@ ui.layout(
             <input id="aTime" w="30" text="" />
              <text textSize="15sp" marginLeft="15" textColor="black" text="执行:" />
             <input id="aZX" w="30" text="" />
-        </horizontal>
-         <horizontal>
-            <text textSize="15sp" marginLeft="15" textColor="black" text="视频频道:" />
-            <input id="vCatlog" w="80" text="" />
-            <text textSize="15sp" marginLeft="15" textColor="black" text="关键词:" />
-            <input id="s" w="150" text="" />
         </horizontal>
         <horizontal>
             <text textSize="15sp" marginLeft="15" textColor="black" text="视频数量:" />
@@ -108,25 +99,26 @@ ui.layout(
             <input id="lCount" w="30" text="" />
             <text textSize="15sp" marginLeft="15" textColor="black" text="答题:" />
             <input id="qCount" w="30" text="" />
-            <text textSize="15sp" marginLeft="15" textColor="black" text="争上游次数:" />
+        </horizontal>
+        <horizontal>
+            <text textSize="15sp" marginLeft="15" textColor="black" text="对战次数:" />
             <input id="zCount" w="30" text="" />
+            <text textSize="15sp" marginLeft="15" textColor="black" text="每周专项:" />
+            <input id="zxzd" w="30" text="" />
         </horizontal>
         <button w="250" layout_gravity="center" id="about" text="使用说明" />
     </vertical>
 );
 
-ui.aCatlog.setText(aCatlog.toString());
-ui.date_string.setText(date_string.toString());
 ui.aCount.setText(aCount.toString());
 ui.aTime.setText(aTime.toString());
 ui.aZX.setText(aZX.toString());
-ui.vCatlog.setText(vCatlog.toString());
-ui.s.setText(s.toString());
 ui.vCount.setText(vCount.toString());
 ui.vTime.setText(vTime.toString());
 ui.lCount.setText(lCount.toString());
 ui.qCount.setText(qCount.toString());
 ui.zCount.setText(zCount.toString());
+ui.zxzd.setText(zxzd.toString());
 
 var thread = null;
 
@@ -137,12 +129,11 @@ ui.all.click(function () {
     }
     toast("开始积分判断运行");
     thread = threads.start(function () {
-        aCatlog = ui.aCatlog.getText();
-        vCatlog = ui.vCatlog.getText();
         aZX = parseInt(ui.aZX.getText());
         lCount = parseInt(ui.lCount.getText());
         qCount = parseInt(ui.qCount.getText());
         zCount = parseInt(ui.zCount.getText());
+        zxzd = parseInt(ui.zxzd.getText());
         main();
     });
 });
@@ -154,10 +145,6 @@ ui.customize.click(function () {
     }
     toast("开始自定义运行");
     thread = threads.start(function () {
-        aCatlog = ui.aCatlog.getText();
-        date_string = parseInt(ui.date_string.getText());
-        vCatlog = ui.vCatlog.getText();
-        s =  ui.s.getText();
         aCount = parseInt(ui.aCount.getText());
         aTime = parseInt(ui.aTime.getText());
         aZX = parseInt(ui.aZX.getText());
@@ -166,6 +153,7 @@ ui.customize.click(function () {
         lCount = parseInt(ui.lCount.getText());
         qCount = parseInt(ui.qCount.getText());
         zCount = parseInt(ui.zCount.getText());
+        zxzd = parseInt(ui.zxzd.getText());
         customize_flag = true;
         console.log('文章频道：' + aCatlog.toString() + '日期：' + date_string)
         console.log('文章数量：' + aCount.toString() + '篇')
@@ -194,7 +182,7 @@ ui.cq.click(function () {//挑战答题
     });
 });
 
-ui.dq.click(function () {//每日答题
+ui.wq.click(function () {//每周答题 专项答题
      auto.waitFor();//等待获取无障碍辅助权限
     if (thread != null && thread.isAlive()) {
         alert("注意", "脚本正在运行，请结束之前进程");
@@ -202,7 +190,8 @@ ui.dq.click(function () {//每日答题
     }
     thread = threads.start(function () {
          start_app();
-         dailyQuestion();
+         weeklyQuestion();
+         specialQuestion();
          threads.shutDownAll();
          console.hide();
          engines.stopAll();
@@ -227,7 +216,7 @@ ui.sr.click(function () {//双人对战
     });
 });
 
-ui.zsy.click(function () {//争上游答题
+ui.zsy.click(function () {//四人赛（争上游答题）
      auto.waitFor();//等待获取无障碍辅助权限
     if (thread != null && thread.isAlive()) {
         alert("注意", "脚本正在运行，请结束之前进程");
@@ -281,10 +270,18 @@ ui.stop.click(function () {
 
 ui.about.click(function () {
  alert("使用说明",
-        "AiQiangGuo Ver 2.19-2020.12.12 \n 〇程序需要 悬浮窗 和 无障碍权限（设置→辅助功能→无障碍→本 APP）\n 〇程序工作原理为模拟点击，基于Auto.js框架+JavaScript脚本执行 \n 〇程序不支持每周答题，专项答题，订阅。正常执行完毕42分（可执行前手动答题，答题完毕学习强国请返回主界面; 也可执行中手动辅助答题，以手动点击为准） \n 〇积分判断执行：读取今日积分确定需执行任务，任务精准，但部分手机可能不支持(积分获取正常推荐使用) \n 〇循序依次执行：预置每日积分所需执行任务数，不判断积分，依次执行所有任务(积分获取返回null或报错使用) \n ◎请确保进入学习强国时位于 主界面，模拟点击从主界面开始 \n ◎因存在文章误点击视频，多次重复点击同一文章视频问题，有概率造成循环执行，请手动补学 \n ◎安卓版本低于安卓7，无法执行收藏评论转发，文章界面模拟滑动 \n ◎测试机型：Redmi 6，Android 9，MiUI 11开发版 \n ★代码基于以下项目实现：Auto.js https://github.com/hyb1996/Auto.js \n LazyStudy https://github.com/lolisaikou/LazyStudy  \n AutoLearnChina https://github.com/gzhjic/LearnChinaHelper \n XXQG-Helper https://github.com/ivanwhaf/xxqg-helper \n ●免责声明：本程序只供个人学习Auto.js使用，不得盈利传播，不得用于违法用途，否则造成的一切后果自负！"
+        "AiQiangGuo Ver 2.22.0-2021.03.06 \n 〇程序需要 悬浮窗 和 无障碍权限（设置→辅助功能→无障碍→auto.js）\n 〇程序工作原理为模拟点击，基于Auto.js框架+JavaScript脚本执行 \n 〇程序不支持订阅。正常执行完毕50+分（每周 专项因部分题提示与题干不一致，不保证答题正确; 争上游 对战存在部分特殊题提取不到题干不能点击。可执行前手动答题，答题完毕学习强国请返回主界面; 也可执行中手动辅助答题，以手动点击为准） \n 〇积分判断执行：读取今日积分确定需执行任务，任务精准，但部分手机可能不支持(积分获取正常推荐使用) \n 〇循序依次执行：预置每日积分所需执行任务数，不判断积分，依次执行所有任务(积分获取返回null或报错使用) \n ◎请确保进入学习强国时位于 主界面，模拟点击从主界面开始 \n ◎因存在文章误点击视频，多次重复点击同一文章视频问题，有概率造成循环执行，请手动补学 \n ◎安卓版本低于安卓7，无法执行收藏评论转发，文章界面模拟滑动 \n ◎测试机型：Redmi 6，Android 9，MiUI 11开发版 \n ★代码基于以下项目实现：Auto.js https://github.com/hyb1996/Auto.js \n LazyStudy https://github.com/lolisaikou/LazyStudy  \n AutoLearnChina https://github.com/gzhjic/LearnChinaHelper \n XXQG-Helper https://github.com/ivanwhaf/xxqg-helper \n ●免责声明：本程序只供个人学习Auto.js使用，不得盈利传播，不得用于违法用途，否则造成的一切后果自负！"
          )
          });
-
+         
+/**
+ * @description: 定义延时函数
+ * @param: seconds-延迟秒数
+ * @return: null
+ */
+function delay(seconds) {
+    sleep(1000 * seconds);//sleep函数参数单位为毫秒所以乘1000
+}
 
 function main() {
     if (!judge_tiku_existence()) {//题库不存在则退出
@@ -295,11 +292,19 @@ function main() {
     var start = new Date().getTime();//程序开始时间 
     if (customize_flag == true) {
         //自定义学习，各项目执行顺序可换
-         localChannel1();//本地频道
-         zsyQuestion();//争上游答题
-         SRQuestion();//双人对战
+        localChannel1();//本地频道
+        if (lCount >= 1) {
+            zsyQuestion();//四人赛（争上游答题）
+            SRQuestion();//双人对战
+        }
+        if (zCount >= 1) {
         challengeQuestion();//挑战答题
         dailyQuestion();//每日答题
+	}
+        if (zxzd == 1){
+        weeklyQuestion();//每周答题
+        specialQuestion();//专项答题
+        }
         if (aZX == 1){
         articleStudy1();//学习文章脚本1，包含点赞、分享和评论 
         }else{
@@ -307,13 +312,24 @@ function main() {
         }  
         videoStudy_news();//看视频              
     }else {
-     getScores();//获取积分
-     while ( myScores["双人对战"] < 1 || myScores["争上游答题"] < 2 || myScores['本地频道'] != 1 || myScores['挑战答题'] != 6 || myScores['每日答题'] != 5 || myScores['视听学习'] != 6 || myScores['我要选读文章'] != 12 /*|| myScores['分享'] != 1 || myScores['发表观点'] != 1*/){
+       getScores();//获取积分
+     if (zxzd == 1){
+      if (myScores['每周答题'] < 1) {
+        weeklyQuestion(); //每周答题
+        }   
+      if (myScores['专项答题'] < 1) {
+        specialQuestion(); //专项答题
+        } 
+      }
+     while ( myScores["双人对战"] < 1 || /*myScores["争上游答题"] < 2*/ myScores["四人赛"] < 2 || myScores['本地频道'] != 1 || myScores['挑战答题'] != 6 || myScores['每日答题'] != 5 || myScores['视听学习'] != 6 || myScores['我要选读文章'] != 12 /*|| myScores['分享'] != 1 || myScores['发表观点'] != 1*/){
        if (myScores['本地频道'] != 1) {
         localChannel1();//本地频道
         }
-       if (myScores["争上游答题"] < 2) {
+      /*if (myScores["争上游答题"] < 2) {
         zsyQuestion();//争上游答题
+        }*/
+        if (myScores["四人赛"] < 2) {
+        zsyQuestion();//四人赛
         }
        if (myScores["双人对战"] < 1) {
         SRQuestion();//双人对战
@@ -323,7 +339,7 @@ function main() {
         }
       if (myScores['每日答题'] != 5) {
         dailyQuestion(); //每日答题
-        }   
+        }
       if (myScores['我要选读文章'] != 12) {
       if (aZX == 1){
         articleStudy1();//学习文章脚本1，包含点赞、分享和评论 
@@ -339,7 +355,7 @@ function main() {
        }
     if (myScores['分享'] != 1 || myScores['发表观点'] != 1){
      aCount = 2;//置文章数2，学习文章2，启动分享收藏评论2
-     articleStudy(); //收藏+分享 若c运行到此报错请注释本行！
+     articleStudy1(); //收藏+分享 若c运行到此报错请注释本行！
      }
     if (myScores['视听学习时长'] != 6){
         listenToRadio();//听电台广播补视听时长
@@ -347,6 +363,7 @@ function main() {
   }
     var end = new Date().getTime();
     console.log("运行结束,共耗时" + (parseInt(end - start)) / 1000 + "秒");
+    console.log("AiQiangGuo小助手执行完毕，请检查积分。");
     threads.shutDownAll();
     console.hide();
     engines.stopAll();
@@ -364,8 +381,9 @@ function main() {
  * @return: null
  */
 function start_app() {
-    console.setPosition(0, device.height / 2);//部分华为手机console有bug请注释本行
+    console.setPosition(0, device.height / 1.5);//部分华为手机console有bug请注释本行
     console.show();//部分华为手机console有bug请注释本行
+    console.log("欢迎使用AiQiangGuo小助手");
     console.log("启动学习强国");
     if (!launchApp("学习强国")){//启动学习强国app
      console.error("找不到学习强国App!");
@@ -396,20 +414,11 @@ function start_app() {
        } */  //适合内部返回主页，不适合已清理强国后台情况下初始拉起强国app
     while (!id("home_bottom_tab_button_work").exists()) {//20201001 学习按钮文字属性由"学习"改为 "工作"，以下所有点击学习按钮加载主页均同步修改
     id("home_bottom_tab_button_work").findOne().click();//点击主页正下方的"学习"按钮
-    console.log("等待加载出主页");
+    console.log("等待加载主页");
     delay(1);
     continue;/*break;exists(); back();*/
      }
     delay(1);
-}
-
-/**
- * @description: 定义延时函数
- * @param: seconds-延迟秒数
- * @return: null
- */
-function delay(seconds) {
-    sleep(1000 * seconds);//sleep函数参数单位为毫秒所以乘1000
 }
 
 /**
@@ -816,7 +825,7 @@ function videoStudy_news() {
     click("电视台");
     var vCatlog = vCat[num] ; //视频学习类别，随机取 "第一频道"、"学习视频"、"联播频道"
     if (num == 0){
-             var s = "央视网";
+             var s = "中央广播电视总台";
              }else if (num == 1){
              var s = "央视新闻";
              }else {
@@ -1162,6 +1171,7 @@ function Comment(i) {
 //基于控件点击 20200911 部分手机 本地在频道列表为控件3 但部分为控件14，可点击后基于切换地区判断。
 //20201020如果在综合页面进入本地，则识别不到新思想，因此改基于综合判断。20201022 山东省界面更新频道内控件3会跳转外部链接故改0
 //20210116 控件14改动为15，控件3有无变动未知
+//20210204 控件15改动为16
 function localChannel1() {
     while (!id("home_bottom_tab_button_work").exists());//等待加载出主页
     id("home_bottom_tab_button_work").findOne().click();//点击主页正下方的"学习"按钮
@@ -1178,7 +1188,7 @@ function localChannel1() {
        back();
        className("android.widget.TextView").text("综合").findOne().parent().parent().child(0).click();
        }else{
-       className("android.widget.TextView").text("综合").findOne().parent().parent().child(15).click(); //14 15
+       className("android.widget.TextView").text("综合").findOne().parent().parent().child(16).click(); //14 15
        delay(2);
        className("android.support.v7.widget.RecyclerView").findOne().child(0).click();
        delay(2);
@@ -1417,14 +1427,10 @@ function getYestardayDateString() {
 }
 
 
-/*************************************************挑战 争上游 双人答题部分******************************************************/
-
-function indexFromChar(str) {
-    return str.charCodeAt(0) - "A".charCodeAt(0);
-}
+/*************************************************争上游 双人答题部分******************************************************/
 
 /**
- * @description: 争上游答题 20200928增加
+ * @description: 争上游答题 20200928增加 四人赛 20210303改名
  * @param: null
  * @return: null
  */
@@ -1444,7 +1450,7 @@ function zsyQuestion() {
     while (!text("答题练习").exists());//可用词：排行榜 答题竞赛
     delay(1);
     className("android.view.View").text("答题练习").findOne().parent().child(8).click();
-    console.log("开始争上游答题")
+    console.log("开始四人赛")
     delay(2);
     if(className("android.view.View").text("开始比赛").exists()){
       className("android.view.View").text("开始比赛").findOne().click();
@@ -1463,10 +1469,10 @@ function zsyQuestion() {
     let zNum = 0;//轮数
     while (true) {
         if (className("android.view.View").text("继续挑战").exists() || textContains("继续挑战").exists())//遇到继续挑战，则本局结束
-        {console.info("争上游答题本局结束!");
+        {console.info("四人赛本局结束!");
          zNum++;
           if (zNum >= zCount) {
-            console.log("争上游答题结束，返回主页！");
+            console.log("四人赛结束，返回主页！");
                 //回退4次返回主页 
             back(); delay(1);
             back(); delay(1);
@@ -1484,7 +1490,7 @@ function zsyQuestion() {
           while (!text("答题练习").exists());//排行榜 答题竞赛
           delay(1);
           className("android.view.View").text("答题练习").findOne().parent().child(8).click();
-          console.log("开始争上游答题")
+          console.log("开始四人赛")
           delay(2);
           if (className("android.view.View").text("开始比赛").exists()){
             className("android.view.View").text("开始比赛").findOne().click();
@@ -1652,7 +1658,7 @@ function zsyQuestionLoop() {
         let i = random(0, listArray.length - 1);
         console.log("随机点击");
         listArray[i].child(0).click();//随意点击一个答案
-        ClickAnswer = listArray[i].child(0).child(1).text();;//记录已点击答案
+        ClickAnswer = listArray[i].child(0).child(1).text();//记录已点击答案
         console.log("随机点击:"+ClickAnswer);
         return;
       } 
@@ -1696,7 +1702,7 @@ function zsyQuestionLoop() {
         hasClicked = true;
         ClickAnswer = listArray[i].child(0).child(1).text();;//记录已点击答案
         console.log("随机点击:"+ClickAnswer);
-        console.log("---------------------------");
+        console.log("-------------");
        }else{//如果找到了答案 该部分问题: 选项带A.B.C.D.，题库返回答案不带，char返回答案带
         var answer_a = answer.substring(0,2);//定义answer_a，获取答案前两个字符对比A.B.C.D.应该不会出现E选项
         if(answer_a == "A." || answer_a == "B." || answer_a == "C." || answer_a =="D."){
@@ -1705,7 +1711,7 @@ function zsyQuestionLoop() {
             if (listDescStrb == answer) {
                 item.child(0).click();//点击答案
                 hasClicked = true;
-                console.log("---------------------------");
+                console.log("------------");
               }
             });
           }else{
@@ -1715,7 +1721,7 @@ function zsyQuestionLoop() {
             if (listDescStrb == answer) {
                 item.child(0).click();//点击答案
                 hasClicked = true;
-                console.log("---------------------------");
+                console.log("-------------");
              }
            });
         }
@@ -1727,7 +1733,7 @@ function zsyQuestionLoop() {
         listArray[i].child(0).click();//随意点击一个答案
         ClickAnswer = listArray[i].child(0).child(1).text();;//记录已点击答案
         console.log("随机点击:"+ClickAnswer);
-        console.log("---------------------------");
+        console.log("--------------");
      }
    }
     oldaquestion = aquestion;
@@ -1747,6 +1753,7 @@ function zsyQuestionLoop() {
 function zsyQuestionLoop1() {
     //delay(1);
     let ClickAnswer;
+   try {
     if (!className("RadioButton").exists() || className("android.view.View").text("继续挑战").exists() || textContains("继续挑战").exists() /*|| !textContains("距离答题结束").exists()*/){//不存在本局结束标志 继续挑战，则执行  
     /* console.info("答题结束!");*/
       return;
@@ -1869,7 +1876,16 @@ function zsyQuestionLoop1() {
         oldaquestion = aquestion;
         delay(1);
     }
+   }catch (e){
+     delay(3);
+   if (!className("RadioButton").exists() || className("android.view.View").text("继续挑战").exists() || textContains("继续挑战").exists() /*|| !textContains("距离答题结束").exists()*/){//不存在本局结束标志 继续挑战，则执行  
+     /*console.info("答题结束!");*/ //配合20201225界面变化 距离答题结束 删除，本语句删除
+     return;
+    }  
+  }  
 }
+
+/*************************************************挑战答题部分***************************************************/
 
 /**
  * @description: 挑战答题
@@ -1971,6 +1987,7 @@ function challengeQuestion() {
  * @return: null
  */
 function challengeQuestionLoop(conNum) {
+   try{
     let ClickAnswer;//定义已点击答案
     if (conNum >= qCount)//答题次数足够退出，每轮qCount=5+随机1-3次
     {
@@ -2004,7 +2021,7 @@ function challengeQuestionLoop(conNum) {
         { console.log("更新本地题库答案...");
           checkAndUpdate(question, answer, ClickAnswer);
         }
-        console.log("---------------------------");
+        console.log("-------------");
         return;
     }
     if (className("ListView").exists()) {
@@ -2065,7 +2082,7 @@ function challengeQuestionLoop(conNum) {
         { console.log("更新本地题库答案...");
           checkAndUpdate(question, answer, ClickAnswer);
         }
-        console.log("---------------------------");
+        console.log("-------------");
     }
     else//如果找到了答案
     {
@@ -2084,7 +2101,7 @@ function challengeQuestionLoop(conNum) {
               { console.error("题库答案错误!!!");
                /*checkAndUpdate(question, answer, ClickAnswer);*/
                }
-                console.log("---------------------------");
+                console.log("-------------");
             }
         });
     }
@@ -2104,10 +2121,13 @@ function challengeQuestionLoop(conNum) {
         { console.error("随机点击错误!!!");
                /*checkAndUpdate(question, answer, ClickAnswer);*/
                }
-       console.log("---------------------------");
+       console.log("-------------");
     }
+   }catch (e){
+      console.error("挑战答题错误，请手动处理！！");
+      return;
+   }
 }
-
 /**
  * @description: 判断题库是否存在
  * @param: null
@@ -2250,10 +2270,10 @@ function weeklyQuestion() {
     console.log("开始每周答题")
     //delay(2);
     //text("未作答").click();
-
     //翻页点击每周作答
     //let sublist = className("ListView").findOnce(0);//控件错误，用swipe划，7.0以下可能错误
     let i = 0;//参考订阅的翻页，只进行一次点击
+    let n = 0;//定义下滑次数
     while (i < 1) {
         if (text("未作答").exists()) {
             text("未作答").click();
@@ -2267,12 +2287,18 @@ function weeklyQuestion() {
         } else {
             delay(1);
             swipe(x, h1, x, h2, 500);//往下翻（纵坐标从5/6处滑到1/6处）
-            //console.log("滑动查找未作答的每周答题")
+            console.log("滑动查找未作答的每周答题")
+            n++;
+            if (n >3){
+            console.log("下滑四次没有可作答每周答题,退出!!!")   
+            back(); delay(1);
+            back(); delay(1);
+            back(); delay(1);
+            return; }
         }
     }
     ////翻页点击每周作答
-
-    let dlNum = 0;//每日答题轮数
+    /*let dlNum = 0;*///每日答题轮数,该数用来当第一轮未满分时发起第二轮答题，浪费，不用
     while (true) {
         delay(1)
         while (!(textStartsWith("填空题").exists() || textStartsWith("多选题").exists() || textStartsWith("单选题").exists())) {
@@ -2290,28 +2316,36 @@ function weeklyQuestion() {
             }
             break;
         } else if (text("查看解析").exists()) {
-            console.log("每周答题结束！")
+            console.log("每周答题结束，返回！")
             back(); delay(0.5);
             back(); delay(0.5);
             break;
         } else if (text("再来一组").exists()) {
-            delay(2);
+            /*delay(2);
             dlNum++;
             if (!text("领取奖励已达今日上限").exists()) {
                 text("再来一组").click();
                 console.warn("第" + (dlNum + 1).toString() + "轮答题:");
                 delay(1);
-            }
-            else {
+            }else {
                 console.log("每周答题结束，返回！")
                 text("返回").click(); delay(2);
                 while (!textContains("我要答题").exists()) {
-                    console.log("专项答题结束，返回！")
+                    console.log("每周答题结束，返回！")
                     back(); delay(1);
                 }
                 back(); delay(1);
                 break;
-            }
+            }*/
+          console.log("每周答题结束，返回！")
+                text("返回").click(); delay(2);
+                back(); delay(1);
+                back(); delay(1);
+                while (!textContains("我要答题").exists()) {
+                    console.log("每周答题结束，返回！")
+                    back(); delay(1);
+                }
+                break;
         }
     }
     //回退返回主页 
@@ -2357,18 +2391,16 @@ function specialQuestion() {
              text("开始答题").click();
        }
     */
-
     //翻页点击专项答题
     let i = 0;
+    let n = 0;
     while (i < 1) {
         if (text("继续答题").exists()) {
             text("继续答题").click();
             i++;
-            //console.log("1471")
         } else if (text("开始答题").exists()) {
             text("开始答题").click();
             i++;
-            //console.log("1474")
         } else if (text("您已经看到了我的底线").exists()) {
             console.log("没有可作答的专项答题了,退出!!!")
             back(); delay(1);
@@ -2387,11 +2419,17 @@ function specialQuestion() {
             swipe(x, h1, x, h2, 500);//往下翻（纵坐标从5/6处滑到1/6处）
             delay(1);
             console.log("滑动查找未作答的专项答题")
+            n++;
+            if (n >3){
+            console.log("下滑四次没有可作答专项答题,退出!!!")    
+            back(); delay(1);
+            back(); delay(1);
+            back(); delay(1);
+            return; }
         }
     }
     ////翻页点击专项答题
-
-    let dlNum = 0;//每日答题轮数
+    /*let dlNum = 0;*/ //每日答题轮数
     while (true) {
         delay(1)
         while (!(textStartsWith("填空题").exists() || textStartsWith("多选题").exists() || textStartsWith("单选题").exists())) {
@@ -2414,7 +2452,7 @@ function specialQuestion() {
             }
             break;
         } else if (text("再来一组").exists()) {
-            delay(2);
+            /*delay(2);
             dlNum++;
             if (!text("领取奖励已达今日上限").exists()) {
                 text("再来一组").click();
@@ -2430,7 +2468,18 @@ function specialQuestion() {
                 }
                 back(); delay(1);
                 break;
+            }*/
+          console.log("专项答题结束，返回！")
+          delay(2);
+           while (!textContains("专项答题").exists()) {
+              console.log("专项答题结束，返回！")
+              back(); delay(1);
+              }
+           back(); delay(1);
+           while (!textContains("我要答题").exists()) {
+                back(); delay(1);
             }
+           break;
         }
     }
     //回退返回主页 
@@ -2465,6 +2514,7 @@ function dailyQuestionLoop() {
     var blankArray = [];
     var question = "";
     var answer = "";
+   try{
     if (textStartsWith("填空题").exists()) {
         var questionArray = getFitbQuestion();
         questionArray.forEach(item => {
@@ -2491,7 +2541,7 @@ function dailyQuestionLoop() {
                     setText(i, answer.substr(blankArray[i - 1], blankArray[i]));
                 }
               } 
-           checkAndUpdate(question, ansTiku, answer);                      
+           /*checkAndUpdate(question, ansTiku, answer);*/                      
        } else { //答案非空，题库中已找到答案
             console.info("答案：" + answer);
             setText(0, answer.substr(0, blankArray[0]));
@@ -2535,9 +2585,9 @@ function dailyQuestionLoop() {
             var tipsStr = getTipsStr();
             answer = clickByTips(tipsStr);
             console.info("提示中的答案：" + answer);
-            if (text("单选题").exists()){//仅单选题更新题库，多选题不更新进题库
+           /*if (text("单选题").exists()){//仅单选题更新题库，多选题不更新进题库
              checkAndUpdate(question, ansTiku, answer);
-           }
+           }*/
         } else {
             console.info("答案：" + ansTiku);
             delay(random(0.5, 1));//随机延时0.5-1秒
@@ -2548,6 +2598,14 @@ function dailyQuestionLoop() {
     if (text("确定").exists()) {//每日每周答题
         text("确定").click();
        delay(random(0.5, 1));//随机延时0.5-1秒
+       if (text("下一题").exists()) {//每日答题做错，会先确定，再下一题
+            text("下一题").click();
+            delay(random(0.5, 1));//随机延时0.5-1秒
+      }
+      if (text("完成").exists()) {//每日答题最后一题做错后的提交
+            text("完成").click();
+            delay(random(0.5, 1));//随机延时0.5-1秒
+      }
     } else if (text("下一题").exists()) {//专项答题
             text("下一题").click();
             delay(random(0.5, 1));//随机延时0.5-1秒
@@ -2562,6 +2620,10 @@ function dailyQuestionLoop() {
     }
    console.log("---------------------------");
     delay(2);
+  }catch (e){
+     console.error("答题错误，请手动处理！！");
+     return;
+  }
 }
 
 
@@ -2670,7 +2732,7 @@ function getAnswerFromTips(questionArray, tipsStr) {
  */
 function clickByTips(tipsStr) {
     var clickStr = "";
-    var isFind = false;
+    let isFind = false;
     if (className("ListView").exists()) {
         var listArray = className("ListView").findOne().children();
         listArray.forEach(item => {
@@ -2696,6 +2758,7 @@ function clickByTips(tipsStr) {
  * @return: null
  */
 function clickByAnswer(answer) {
+    let isFind = false;
     if (className("ListView").exists()) {
         var listArray = className("ListView").findOnce().children();
         listArray.forEach(item => {
@@ -2704,9 +2767,19 @@ function clickByAnswer(answer) {
             var listDescStr = item.child(0).child(2).text();
             if (answer.indexOf(listIndexStr) >= 0 || answer == listDescStr) {
                 item.child(0).click();
+                isFind = true;
             }
         });
+     if (!isFind) { //找到答案 点击失败 点击第一个
+            listArray[0].child(0).click();
+         }
     }
+}
+
+/*************************************************题库操作部分***************************************************/
+
+function indexFromChar(str) {
+    return str.charCodeAt(0) - "A".charCodeAt(0);
 }
 
 /**
