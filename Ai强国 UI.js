@@ -724,6 +724,7 @@ function articleStudy1() {
             }
             console.log("正在学习第" + (i + 1) + "篇文章...");
             fail = 0;//失败次数清0
+            aTime = parseInt(ui.aTime.getText());  //获取并转换为整数
             article_timing(i, aTime);
             if (i < cCount)//收藏分享2篇文章
             {
@@ -888,6 +889,7 @@ for (var i = 0, t = 0; i < aCount;) {
             }
             console.log("正在学习第" + (i + 1) + "篇文章...");
             fail = 0; //失败次数清0
+            aTime = parseInt(ui.aTime.getText());  //获取并转换为整数
             article_timing(i, aTime);
             if (i < cCount)//收藏分享2篇文章
              {
@@ -2452,8 +2454,8 @@ function weeklyQuestion() {
         } else {
             delay(1);
             swipe(x, h1, x, h2, 500);//往下翻（纵坐标从5/6处滑到1/6处）
-            console.log("滑动第" + n.toString() + "次查找未作答的每周答题")
             n++;
+            console.log("滑动第" + n.toString() + "次查找未作答的每周答题")
             if (n >= wqslipCount ){
             console.log("下滑" + wqslipCount.toString() + "次没有可作答每周答题,退出!!!")   
             back(); delay(1);
