@@ -1009,6 +1009,7 @@ function videoStudy_news() {
         if (click(s, t) == true) {
             console.log("即将学习第" + (i + 1) + "个视频!");
             fail = 0;//失败次数清0
+            vTime = parseInt(ui.vTime.getText());  //获取并转换为整数
             video_timing_news(i, vTime);//学习每个新闻联播小片段
             back();//返回联播频道界面
             while (!id("home_bottom_tab_button_work").exists());//等待加载出主页
