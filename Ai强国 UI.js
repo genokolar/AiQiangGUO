@@ -59,6 +59,7 @@ var lCount = conf[5];//挑战答题轮数
 var qCount = random(5, 7);//挑战答题每轮答题数(5~7随机)
 var zCount = conf[6];//四人赛（争上游答题）轮数
 var wqslipCount = conf[7];//每周答题下滑次数
+var zqslipCount = conf[8];//专项答题下滑次数
 var zsyzd =1;//四人赛（争上游）和双人对战是否自动做，1，2 默认自动1
 var oldaquestion;//四人赛（争上游）和对战答题循环，定义旧题目对比新题目用20201022
 var zxzd =1;//每周和专项是否自动做，1，2 默认自动1
@@ -132,7 +133,11 @@ ui.layout(
                             </horizontal>
                             <button text="-------其他配置-------" style="Widget.AppCompat.Button.Borderless.Colored" w="*" />
                             <horizontal>
-                                <text textSize="15sp" marginLeft="15" textColor="black" text="每周挑战下拉次数:" />
+                                <text textSize="15sp" marginLeft="15" textColor="black" text="专项答题下拉次数:" />
+                                <input id="zqslipCount" w="30" text="" />
+                            </horizontal>
+                            <horizontal>
+                                <text textSize="15sp" marginLeft="15" textColor="black" text="每周答题下拉次数:" />
                                 <input id="wqslipCount" w="30" text="" />
                             </horizontal>
                             <button style="Widget.AppCompat.Button.Colored" id="save" h="50" text="保存当前配置" />
@@ -165,7 +170,7 @@ ui.emitter.on("options_item_selected", (e, item)=>{
             alert("协议", "免责声明：本程序只供个人学习Auto.js使用，不得盈利传播，不得用于违法用途，否则造成的一切后果自负！\n如果继续使用此应用即代表您同意此协议");
             break;
         case "关于":
-            alert("关于", "Ai强国 21.05.18.M \n Geno Modified \n 由格诺修改版本");
+            alert("关于", "Ai强国 21.05.28.M \n Geno Modified \n 由格诺修改版本");
             break;
         case "说明":
             alert("使用说明",
@@ -218,6 +223,7 @@ ui.qCount.setText(qCount.toString());
 ui.zCount.setText(zCount.toString());
 ui.zxzd.setText(zxzd.toString());
 ui.wqslipCount.setText(wqslipCount.toString());
+ui.zqslipCount.setText(zqslipCount.toString());
 
 var thread = null;
 
@@ -230,8 +236,9 @@ ui.save.click(function () {
     lCount = parseInt(ui.lCount.getText());
     zCount = parseInt(ui.zCount.getText());
     wqslipCount = parseInt(ui.wqslipCount.getText());
+    zqslipCount = parseInt(ui.zqslipCount.getText());
     
-    var config = aCount+" "+aTime+" "+aZX+" "+vCount+" "+vTime+" "+lCount+" "+zCount+" "+wqslipCount;
+    var config = aCount+" "+aTime+" "+aZX+" "+vCount+" "+vTime+" "+lCount+" "+zCount+" "+wqslipCount+" "+zqslipCount;
     files.write("./config.txt", config);
     toast("保存成功");
 });
@@ -269,6 +276,7 @@ ui.customize.click(function () {
         zCount = parseInt(ui.zCount.getText());
         zxzd = parseInt(ui.zxzd.getText());
         wqslipCount = parseInt(ui.wqslipCount.getText());
+        zqslipCount = parseInt(ui.zqslipCount.getText());
         customize_flag = true;
         console.log('文章频道：' + aCatlog.toString() + '日期：' + date_string)
         console.log('文章数量：' + aCount.toString() + '篇')
@@ -338,6 +346,7 @@ ui.sq.click(function () {// 专项答题
    }
    thread = threads.start(function () {
         start_app();
+        zqslipCount = parseInt(ui.zqslipCount.getText());
         specialQuestion();
         threads.shutDownAll();
         console.hide();
@@ -2586,10 +2595,10 @@ function specialQuestion() {
             delay(1);
             swipe(x, h1, x, h2, 500);//往下翻（纵坐标从5/6处滑到1/6处）
             delay(1);
-            console.log("滑动查找未作答的专项答题")
             n++;
-            if (n >3){
-            console.log("下滑四次没有可作答专项答题,退出!!!")    
+            console.log("滑动第" + n.toString() + "次查找未作答的专项答题")
+            if (n >= zqslipCount){
+            console.log("下滑" + zqslipCount.toString() + "次没有可作答专项答题,退出!!!")    
             back(); delay(1);
             back(); delay(1);
             back(); delay(1);
