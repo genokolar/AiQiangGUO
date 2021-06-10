@@ -1365,7 +1365,7 @@ function localChannel1() {
        back();
        className("android.widget.TextView").text("综合").findOne().parent().parent().child(0).click();
        }else{
-       className("android.widget.TextView").text("综合").findOne().parent().parent().child(16).click(); //14 15
+       className("android.widget.TextView").text("综合").findOne().parent().parent().child(17).click(); //14 15
        delay(2);
        className("android.support.v7.widget.RecyclerView").findOne().child(0).click();
        delay(2);
